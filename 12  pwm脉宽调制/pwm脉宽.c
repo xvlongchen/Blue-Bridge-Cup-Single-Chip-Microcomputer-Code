@@ -1,0 +1,82 @@
+#include "reg52.h"
+
+sbit L1=P0^0;
+sbit s7=P3^0;
+
+void SelectHC573()
+{
+	P2=(P2&0x1f)|0x80;
+}
+
+void Delay(unsigned int t)
+{
+	while(t--);
+	while(t--);
+}
+
+//**********定时器相关函数********//
+unsigned char count=0;
+unsigned char pwm_duty=0;
+
+void InitTimer0()
+{
+	TMOD=0x01;
+	TH0=(65535-100)/256;
+	TL0=(65535-100)%256;
+	
+	ET0=1;
+	EA=1;
+}
+
+void ServiceTimer0() interrupt 1
+{
+	TH0=(65535-100)/256;
+	TL0=(65535-100)%256;
+	
+	count++;
+	if(count<=pwm_duty)
+	{
+		L1=0;
+	}
+	else if(pwm_duty<100)
+	{
+		L1=1;
+	}
+	else if(count==100)
+	{
+		L1=0;
+		count=0;
+	}
+}
+
+//**********按键相关函数**********//
+unsigned char stat=0;
+void ScanKeys()
+{
+	if(s7==0)
+	{
+		Delay(100);
+		if(s7==0)
+		{
+			switch(stat)
+			{
+				case 0:L1=0;TR0=1;pwm_duty=10;stat=1;break;
+				case 1:pwm_duty=50;stat=2;break;
+				case 2:pwm_duty=90;stat=3;break;
+				case 3:L1=1;TR0=0;stat=0;break;
+			}
+			while(s7==0);
+		}
+	}
+}
+
+void main()
+{
+	L1=1;
+	InitTimer0();
+	SelectHC573();
+	while(1)
+	{
+		ScanKeys();
+	}
+}

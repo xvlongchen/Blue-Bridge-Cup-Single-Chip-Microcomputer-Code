@@ -1,0 +1,6 @@
+*.uvguix.* 
+*.uvoptx 
+Objects/ 
+Listings/ 
+*.hex 
+*.axf 
